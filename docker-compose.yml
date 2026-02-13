@@ -1,0 +1,10 @@
+services:
+  news-aggregator:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      - NEWS_API_KEY=${NEWS_API_KEY}
+      - GUARDIAN_API_KEY=${GUARDIAN_API_KEY}
+      - NYT_API_KEY=${NYT_API_KEY}
+    restart: unless-stopped

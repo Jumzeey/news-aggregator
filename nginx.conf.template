@@ -1,0 +1,59 @@
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Resolver for proxy_pass with variables
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
+
+    # ── NewsAPI proxy ──────────────────────────────────────
+    location /api/newsapi/ {
+        set $newsapi_upstream "https://newsapi.org/v2/";
+        proxy_pass $newsapi_upstream;
+        proxy_set_header Host newsapi.org;
+        proxy_ssl_server_name on;
+        proxy_set_header Accept-Encoding "";
+        # Inject API key into query string
+        set $args "${args}&apiKey=${NEWS_API_KEY}";
+    }
+
+    # ── Guardian API proxy ─────────────────────────────────
+    location /api/guardian/ {
+        set $guardian_upstream "https://content.guardianapis.com/";
+        proxy_pass $guardian_upstream;
+        proxy_set_header Host content.guardianapis.com;
+        proxy_ssl_server_name on;
+        proxy_set_header Accept-Encoding "";
+        # Inject API key into query string
+        set $args "${args}&api-key=${GUARDIAN_API_KEY}";
+    }
+
+    # ── NYT API proxy ─────────────────────────────────────
+    location /api/nyt/ {
+        set $nyt_upstream "https://api.nytimes.com/svc/search/v2/";
+        proxy_pass $nyt_upstream;
+        proxy_set_header Host api.nytimes.com;
+        proxy_ssl_server_name on;
+        proxy_set_header Accept-Encoding "";
+        # Inject API key into query string
+        set $args "${args}&api-key=${NYT_API_KEY}";
+    }
+
+    # ── SPA routing ────────────────────────────────────────
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Disable caching for index.html
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+}
